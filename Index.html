@@ -111,12 +111,12 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
 .tscroll::-webkit-scrollbar{width:5px;height:5px}
 .tscroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
 .dt{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
-.dt th{padding:8px 10px;background:#f1f4fb;border-bottom:2px solid var(--border);font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--txt2);position:sticky;top:0;z-index:2;cursor:pointer;user-select:none;transition:background .15s;white-space:nowrap;overflow:hidden;vertical-align:bottom;line-height:1.3}
+.dt th{padding:8px 10px;background:#f1f4fb;border-bottom:2px solid var(--border);font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--txt2);position:sticky;top:0;z-index:2;cursor:pointer;user-select:none;transition:background .15s;overflow:hidden;vertical-align:bottom;line-height:1.3}
 .dt th:hover{background:#e8edf8}
 .dt th .si::after{content:'⬍';margin-left:3px;opacity:.4;font-size:9px}
 .dt th.asc .si::after{content:'▲';opacity:1}
 .dt th.desc .si::after{content:'▼';opacity:1}
-.dt td{padding:7px 10px;border-bottom:1px solid var(--border);color:var(--txt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;line-height:1.4}
+.dt td{padding:7px 10px;border-bottom:1px solid var(--border);color:var(--txt2);white-space:normal;word-break:break-word;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;line-height:1.4}
 .dt tr:nth-child(even) td{background:#f9fafd}
 .dt tr:hover td{background:#eff4ff!important}
 .dt tr:last-child td{border-bottom:none}
