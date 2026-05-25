@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>GR Procurement Intelligence Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
+:root{
+  --bg:#f0f2f8;--surface:#fff;--surface2:#f7f8fc;--border:#e2e6f0;--border2:#c9d0e3;
+  --txt1:#0f1728;--txt2:#3d4966;--txt3:#7a84a3;--txt4:#b0b8d1;
+  --blue:#2563eb;--blue-l:#eff4ff;--teal:#0d9488;--teal-l:#edfafa;
+  --green:#16a34a;--green-l:#f0fdf4;--amber:#d97706;--amber-l:#fffbeb;
+  --red:#dc2626;--red-l:#fef2f2;--purple:#7c3aed;--purple-l:#f5f3ff;
+  --cyan:#0891b2;--cyan-l:#ecfeff;--pink:#db2777;--pink-l:#fdf2f8;--orange:#ea580c;
+  --radius:12px;--radius-s:8px;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04);
+  --shadow-l:0 4px 24px rgba(0,0,0,.10);
+  --hdr-h:60px;--tab-h:48px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--txt1);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+/* LOADER */
+#loader{position:fixed;inset:0;background:linear-gradient(135deg,#1e3a8a,#0f172a);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:20px;transition:opacity .5s}
+#loader.fade{opacity:0;pointer-events:none}
+.ll{font-family:'Outfit',sans-serif;font-size:22px;font-weight:800;color:#fff;display:flex;align-items:center;gap:10px}
+.ll span{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#3b82f6,#06b6d4);display:flex;align-items:center;justify-content:center;font-size:20px}
+.lbw{width:280px;height:4px;background:rgba(255,255,255,.15);border-radius:99px;overflow:hidden}
+.lb{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#3b82f6,#06b6d4);transition:width .4s}
+.lt{font-size:13px;color:rgba(255,255,255,.6);font-weight:500}
+/* HEADER */
+.hdr{height:var(--hdr-h);background:linear-gradient(135deg,#1e3a8a,#0f172a);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:200;box-shadow:0 2px 20px rgba(0,0,0,.25)}
+.hdr-brand{display:flex;align-items:center;gap:12px}
+.hdr-icon{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,#3b82f6,#06b6d4);display:flex;align-items:center;justify-content:center;font-size:18px}
+.hdr-title{font-family:'Outfit',sans-serif;font-size:17px;font-weight:700;color:#fff;letter-spacing:-.3px}
+.hdr-sub{font-size:11.5px;color:#93b4fd;margin-top:1px}
+.hdr-right{display:flex;align-items:center;gap:10px}
+.live-pill{display:flex;align-items:center;gap:6px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.35);border-radius:99px;padding:4px 12px;font-size:11px;font-weight:700;color:#4ade80;letter-spacing:.5px}
+.ldot{width:7px;height:7px;border-radius:50%;background:#22c55e;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+.hdr-meta{font-size:11.5px;color:#93b4fd}
+.hdr-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:12.5px;font-weight:600;padding:6px 14px;border-radius:8px;cursor:pointer;transition:all .2s;font-family:inherit}
+.hdr-btn:hover{background:rgba(255,255,255,.22)}
+/* TABS */
+.tabs-wrap{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;gap:0;overflow-x:auto;position:sticky;top:var(--hdr-h);z-index:100;box-shadow:var(--shadow)}
+.tabs-wrap::-webkit-scrollbar{height:0}
+.tab-btn{display:flex;align-items:center;gap:7px;padding:0 18px;height:var(--tab-h);font-size:13px;font-weight:600;color:var(--txt3);cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent;margin-bottom:-1px;transition:all .2s}
+.tab-btn:hover{color:var(--blue);background:var(--blue-l)}
+.tab-btn.active{color:var(--blue);border-bottom-color:var(--blue)}
+.tab-icon{font-size:15px}
+/* FILTER BAR */
+.filter-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.flabel{font-size:11px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.8px;white-space:nowrap}
+.fsel{height:34px;padding:0 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-s);font-size:12.5px;color:var(--txt1);cursor:pointer;outline:none;transition:border-color .2s;font-family:inherit;min-width:140px}
+.fsel:focus,.fsel:hover{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.fsep{width:1px;height:22px;background:var(--border)}
+.fchip{font-size:12px;font-weight:600;color:var(--blue);margin-left:auto;background:var(--blue-l);padding:4px 10px;border-radius:6px}
+.cbtn{height:34px;padding:0 12px;background:transparent;border:1px solid var(--border);border-radius:var(--radius-s);font-size:12px;font-weight:600;color:var(--txt3);cursor:pointer;transition:all .2s;font-family:inherit}
+.cbtn:hover{border-color:var(--red);color:var(--red)}
+/* EXPORT BTNS */
+.export-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.exp-btn{height:34px;padding:0 14px;border-radius:var(--radius-s);font-size:12.5px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .2s;display:flex;align-items:center;gap:6px}
+.exp-csv{background:#16a34a;color:#fff}.exp-csv:hover{background:#15803d}
+.exp-xl{background:#1d6f42;color:#fff}.exp-xl:hover{background:#155c36}
+/* MAIN */
+.main{padding:20px 24px;max-width:1800px;margin:0 auto}
+.tab-pane{display:none}.tab-pane.active{display:block}
+/* KPI GRID */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:18px}
+.kcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;position:relative;overflow:hidden;box-shadow:var(--shadow);transition:transform .2s}
+.kcard:hover{transform:translateY(-2px)}
+.kcard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kc,var(--blue))}
+.kcard::after{content:'';position:absolute;top:0;right:0;width:70px;height:70px;background:var(--kc,var(--blue));opacity:.05;border-radius:50%;transform:translate(18px,-18px)}
+.kl{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--txt3);margin-bottom:8px}
+.kv{font-family:'Outfit',sans-serif;font-size:26px;font-weight:800;color:var(--kc,var(--blue));line-height:1.1}
+.ks{font-size:11.5px;color:var(--txt3);margin-top:5px}
+.ki{position:absolute;right:16px;top:16px;font-size:24px;opacity:.15}
+/* DAILY/MONTHLY/YEARLY TRACKER */
+.tracker-table{width:100%;border-collapse:collapse}
+.tracker-table th{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);padding:10px 16px;text-align:left;border-bottom:2px solid var(--border);background:#f1f4fb}
+.tracker-table th.num-h{text-align:center}
+.tracker-table td{padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px;color:var(--txt2)}
+.tracker-table tr:nth-child(even) td{background:#f9fafd}
+.tracker-table tr:hover td{background:#eff4ff}
+.tracker-table td.head-cell{font-weight:700;color:var(--txt1)}
+.tnum{text-align:center;font-family:'Outfit',sans-serif;font-weight:800;font-size:18px}
+.tnum.today{color:var(--blue)}
+.tnum.month{color:var(--teal)}
+.tnum.year{color:var(--amber)}
+/* CHART CARDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.g3{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px}
+.g1{margin-bottom:16px}
+@media(max-width:1024px){.g2,.g3{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+.ct{font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;color:var(--txt1)}
+.cst{font-size:11.5px;color:var(--txt3);margin-top:3px;margin-bottom:14px}
+.cw{position:relative;width:100%}
+.cleg{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.cli{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--txt2)}
+.cld{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+/* SECTION HEAD */
+.sh{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--txt3);margin:22px 0 12px;display:flex;align-items:center;gap:10px}
+.sh::after{content:'';flex:1;height:1px;background:var(--border)}
+/* DATA TABLE */
+.tw{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+.tscroll{overflow-x:auto;max-height:500px;overflow-y:auto}
+.tscroll::-webkit-scrollbar{width:5px;height:5px}
+.tscroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
+.dt{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+.dt th{padding:8px 10px;background:#f1f4fb;border-bottom:2px solid var(--border);font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--txt2);position:sticky;top:0;z-index:2;cursor:pointer;user-select:none;transition:background .15s;white-space:nowrap;overflow:hidden;vertical-align:bottom;line-height:1.3}
+.dt th:hover{background:#e8edf8}
+.dt th .si::after{content:'⬍';margin-left:3px;opacity:.4;font-size:9px}
+.dt th.asc .si::after{content:'▲';opacity:1}
+.dt th.desc .si::after{content:'▼';opacity:1}
+.dt td{padding:7px 10px;border-bottom:1px solid var(--border);color:var(--txt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;line-height:1.4}
+.dt tr:nth-child(even) td{background:#f9fafd}
+.dt tr:hover td{background:#eff4ff!important}
+.dt tr:last-child td{border-bottom:none}
+/* Fixed column widths — prevents any column bleeding into adjacent ones */
+.dt th:nth-child(1),.dt td:nth-child(1){width:42px;text-align:center}        /* S.No */
+.dt th:nth-child(2),.dt td:nth-child(2){width:100px}   /* GR Reg Sl No */
+.dt th:nth-child(3),.dt td:nth-child(3){width:95px}    /* Matls Recd Date */
+.dt th:nth-child(4),.dt td:nth-child(4){width:120px}   /* GR No/Date */
+.dt th:nth-child(5),.dt td:nth-child(5){width:100px}   /* PO NO */
+.dt th:nth-child(6),.dt td:nth-child(6){width:110px}   /* GeM Order */
+.dt th:nth-child(7),.dt td:nth-child(7){width:180px}   /* Vendor */
+.dt th:nth-child(8),.dt td:nth-child(8){width:160px}   /* Item Desc — allow wrap */
+.dt th:nth-child(9),.dt td:nth-child(9){width:55px;text-align:center}         /* Qty */
+.dt th:nth-child(10),.dt td:nth-child(10){width:100px}  /* Inv No */
+.dt th:nth-child(11),.dt td:nth-child(11){width:90px}   /* Invoice Date */
+.dt th:nth-child(12),.dt td:nth-child(12){width:80px;text-align:right}        /* Amount */
+.dt th:nth-child(13),.dt td:nth-child(13){width:140px}  /* Unloading Location */
+.dt th:nth-child(14),.dt td:nth-child(14){width:100px}  /* SRV No */
+.dt th:nth-child(15),.dt td:nth-child(15){width:90px}   /* SRV Date */
+.dt th:nth-child(16),.dt td:nth-child(16){width:90px}   /* Inspection Date */
+.dt th:nth-child(17),.dt td:nth-child(17){width:130px}  /* INDENTER */
+.dt th:nth-child(18),.dt td:nth-child(18){width:100px}  /* Indenting Deptt */
+.dt th:nth-child(19),.dt td:nth-child(19){width:110px}  /* Shifting Status */
+.dt th:nth-child(20),.dt td:nth-child(20){width:80px}   /* Parking No */
+.dt th:nth-child(21),.dt td:nth-child(21){width:90px}   /* Sent to Fin Date */
+.dt th:nth-child(22),.dt td:nth-child(22){width:100px}  /* Payment status */
+.dt th:nth-child(23),.dt td:nth-child(23){width:150px}  /* Remark */
+.dt th:nth-child(24),.dt td:nth-child(24){width:100px}  /* VIMS DAK ID */
+.dt th:nth-child(25),.dt td:nth-child(25){width:130px}  /* REPORT STATUS */
+.dt th:nth-child(26),.dt td:nth-child(26){width:70px;text-align:center}       /* Delayed LD % */
+.dt th:nth-child(27),.dt td:nth-child(27){width:90px}   /* Final LD */
+/* TABLE TOOLBAR */
+.ttbar{padding:14px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--border)}
+.sbox{flex:1;min-width:220px;max-width:360px;height:36px;padding:0 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-s);font-size:13px;color:var(--txt1);font-family:inherit;outline:none;transition:border-color .2s}
+.sbox:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.pi{font-size:12px;color:var(--txt3)}
+/* BADGE */
+.badge{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.bg{background:var(--green-l);color:var(--green)}
+.bb{background:var(--blue-l);color:var(--blue)}
+.ba{background:var(--amber-l);color:var(--amber)}
+.br{background:var(--red-l);color:var(--red)}
+.bp{background:var(--purple-l);color:var(--purple)}
+.bt{background:var(--teal-l);color:var(--teal)}
+.bc{background:var(--cyan-l);color:var(--cyan)}
+.bk{background:#f1f5f9;color:#475569}
+.amt-c{font-weight:700;color:var(--amber);font-family:'Outfit',sans-serif}
+/* PAGINATION */
+.pgn{display:flex;align-items:center;gap:5px;padding:12px 16px;border-top:1px solid var(--border);flex-wrap:wrap}
+.pg-cnt{font-size:12px;color:var(--txt3);flex:1}
+.pgb{height:30px;min-width:30px;padding:0 8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:600;color:var(--txt2);cursor:pointer;transition:all .15s;font-family:inherit}
+.pgb:hover{background:var(--blue-l);border-color:var(--blue);color:var(--blue)}
+.pgb.active{background:var(--blue);border-color:var(--blue);color:#fff}
+.pgb:disabled{opacity:.4;cursor:default}
+/* MONTHLY CARDS */
+.mg{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;margin-bottom:16px}
+.mc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.mc::before{content:'';position:absolute;top:0;left:0;bottom:0;width:4px;background:var(--mcc,var(--blue))}
+.mch{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;padding-bottom:9px;border-bottom:1px solid var(--border)}
+.mch-l{font-family:'Outfit',sans-serif;font-size:16px;font-weight:800;color:var(--txt1)}
+.mch-s{font-size:11px;color:var(--txt3);margin-top:1px}
+.mch-r{text-align:right}
+.mc-bdg{font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:6px;background:var(--blue-l);color:var(--blue)}
+.msr{display:flex;justify-content:space-between;font-size:12.5px;color:var(--txt2);padding:4px 0;border-bottom:1px solid var(--border2)}
+.msr:last-of-type{border:none}
+.msrv{font-weight:700;color:var(--txt1)}
+.dbl{margin-top:10px}
+.dbi{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:11.5px;color:var(--txt2)}
+.dbb{flex:1;height:5px;background:var(--border);border-radius:99px;overflow:hidden}
+.dbf{height:100%;border-radius:99px}
+/* PENDING STATUS CHART */
+.pend-status-wrap{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+@media(max-width:900px){.pend-status-wrap{grid-template-columns:1fr}}
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
+/* RESPONSIVE */
+@media(max-width:768px){
+  .hdr,.filter-bar,.tabs-wrap{padding-left:14px;padding-right:14px}
+  .main{padding:12px}
+  .hdr-meta{display:none}
+  .kv{font-size:20px}
+}
+</style>
+</head>
+<body>
+<!-- LOADER -->
+<div id="loader">
+  <div class="ll"><span>📦</span>GR Intelligence</div>
+  <div class="lbw"><div class="lb" id="lbar"></div></div>
+  <div class="lt" id="ltxt">Connecting to live data feed…</div>
+</div>
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-brand">
+    <div class="hdr-icon">📦</div>
+    <div>
+      <div class="hdr-title">GR Procurement Intelligence Dashboard</div>
+      <div class="hdr-sub" id="hdr-sub">Initialising…</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="live-pill"><div class="ldot"></div>LIVE</div>
+    <div class="hdr-meta" id="hdr-ts">–</div>
+    <button class="hdr-btn" onclick="reloadData(true)">↻ Refresh</button>
+  </div>
+</header>
+<!-- TABS -->
+<nav class="tabs-wrap">
+  <div class="tab-btn active" onclick="switchTab('overview',this)"><span class="tab-icon">📊</span>Executive Overview</div>
+  <div class="tab-btn" onclick="switchTab('tracker',this)"><span class="tab-icon">📆</span>Daily / Monthly / Yearly</div>
+  <div class="tab-btn" onclick="switchTab('monthly',this)"><span class="tab-icon">📅</span>Monthly Highlights</div>
+  <div class="tab-btn" onclick="switchTab('pending',this)"><span class="tab-icon">⏳</span>Pending Items</div>
+  <div class="tab-btn" onclick="switchTab('explorer',this)"><span class="tab-icon">🗃️</span>Data Explorer</div>
+</nav>
+<!-- FILTER BAR -->
+<div class="filter-bar">
+  <span class="flabel">Filters</span>
+  <select class="fsel" id="f-dept" onchange="applyFilters()"><option value="">All Departments</option></select>
+  <div class="fsep"></div>
+  <select class="fsel" id="f-status" onchange="applyFilters()"><option value="">All Report Status</option></select>
+  <div class="fsep"></div>
+  <select class="fsel" id="f-pay" onchange="applyFilters()"><option value="">All Payment Status</option></select>
+  <div class="fsep"></div>
+  <select class="fsel" id="f-month" onchange="applyFilters()"><option value="">All Months</option></select>
+  <div class="fsep"></div>
+  <select class="fsel" id="f-year" onchange="applyFilters()"><option value="">All Years</option></select>
+  <button class="cbtn" onclick="clearFilters()">✕ Clear</button>
+  <div class="fchip" id="f-count">– records</div>
+</div>
+<!-- MAIN -->
+<main class="main">
+
+<!-- ── TAB 1: EXECUTIVE OVERVIEW ── -->
+<div class="tab-pane active" id="pane-overview">
+  <div class="kpi-grid" id="kpi-grid"></div>
+  <div class="g3">
+    <div class="card">
+      <div class="ct">GR Volume by Department</div>
+      <div class="cst">Count of goods receipts per indenting department</div>
+      <div class="cw" style="height:280px"><canvas id="ch-dept-bar"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ct">Report Status Split</div>
+      <div class="cst">Current pipeline distribution</div>
+      <div class="cw" style="height:200px"><canvas id="ch-status-pie"></canvas></div>
+      <div class="cleg" id="leg-status"></div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="ct">Monthly Receipt Trend</div>
+      <div class="cst">GR count per month — from Material Receipt Date (Col C)</div>
+      <div class="cw" style="height:220px"><canvas id="ch-trend"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ct">Payment Status (Actual)</div>
+      <div class="cst">True payment stage breakdown — excluding unknown/blank entries</div>
+      <div class="cw" style="height:200px"><canvas id="ch-pay-donut"></canvas></div>
+      <div class="cleg" id="leg-pay"></div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="ct">Invoice Value by Department (Lakhs)</div>
+      <div class="cst">Total Col S amount per department</div>
+      <div class="cw" style="height:240px"><canvas id="ch-dept-amt"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ct">Pending Financial Exposure by Dept (Lakhs)</div>
+      <div class="cst">Unpaid invoice value — pending GRs only</div>
+      <div class="cw" style="height:240px"><canvas id="ch-pend-amt"></canvas></div>
+    </div>
+  </div>
+  <div class="sh">Top 50 Highest-Value Pending GRs</div>
+  <div class="tw">
+    <div class="tscroll">
+      <table class="dt">
+        <thead><tr>
+          <th>#<span class="si"></span></th>
+          <th>GR Reg. Sl No.<span class="si"></span></th>
+          <th>VIMS DAK ID<span class="si"></span></th>
+          <th>PO No<span class="si"></span></th>
+          <th>Vendor<span class="si"></span></th>
+          <th>Invoice No<span class="si"></span></th>
+          <th>Invoice Date<span class="si"></span></th>
+          <th>Amount (L)<span class="si"></span></th>
+          <th>Matl Recd Date<span class="si"></span></th>
+          <th>Insp. Date<span class="si"></span></th>
+          <th>Report Status<span class="si"></span></th>
+          <th>Department<span class="si"></span></th>
+          <th>Remark<span class="si"></span></th>
+        </tr></thead>
+        <tbody id="top-pend-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── TAB 2: DAILY / MONTHLY / YEARLY TRACKER ── -->
+<div class="tab-pane" id="pane-tracker">
+  <div class="card g1">
+    <div class="ct" style="margin-bottom:4px">Activity Tracker — Daily · Monthly · Yearly</div>
+    <div class="cst">Based on Material Receipt Date (Col C). Today: <span id="tracker-today-lbl"></span></div>
+    <div style="overflow-x:auto;margin-top:16px">
+      <table class="tracker-table">
+        <thead><tr>
+          <th>Activity Head</th>
+          <th class="num-h" style="color:var(--blue)">📅 Today</th>
+          <th class="num-h" style="color:var(--teal)">🗓️ Current Month Total</th>
+          <th class="num-h" style="color:var(--amber)">📆 Current Year Total</th>
+        </tr></thead>
+        <tbody id="tracker-body"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="g2" style="margin-top:16px">
+    <div class="card">
+      <div class="ct">Daily Activity — Last 30 Days</div>
+      <div class="cst">GR receipts per day</div>
+      <div class="cw" style="height:250px"><canvas id="ch-daily"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ct">Yearly Comparison</div>
+      <div class="cst">Total GRs by financial year</div>
+      <div class="cw" style="height:250px"><canvas id="ch-yearly"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── TAB 3: MONTHLY HIGHLIGHTS ── -->
+<div class="tab-pane" id="pane-monthly">
+  <div class="g2">
+    <div class="card">
+      <div class="ct">Monthly Capital Outflow (Lakhs)</div>
+      <div class="cst">Invoice value (Col S) by receipt month (Col C)</div>
+      <div class="cw" style="height:250px"><canvas id="ch-m-val"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ct">Month-over-Month Volume Shift</div>
+      <div class="cst">Net change in GR count vs previous month</div>
+      <div class="cw" style="height:250px"><canvas id="ch-mom"></canvas></div>
+    </div>
+  </div>
+  <div class="sh">Monthly Activity Highlights — Per Department Breakdown</div>
+  <div class="mg" id="month-grid"></div>
+</div>
+
+<!-- ── TAB 4: PENDING ITEMS ── -->
+<div class="tab-pane" id="pane-pending">
+  <div class="pend-status-wrap">
+    <div class="card">
+      <div class="ct">Pending Status Breakdown</div>
+      <div class="cst">Count of GRs at each pending stage</div>
+      <div class="cw" style="height:300px"><canvas id="ch-pend-status"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ct">Pending by Department</div>
+      <div class="cst">Total pending GRs per indenting dept</div>
+      <div class="cw" style="height:300px"><canvas id="ch-pend-dept"></canvas></div>
+    </div>
+  </div>
+  <div class="sh">All Pending GRs — Oldest First</div>
+  <div class="tw">
+    <div class="ttbar">
+      <input type="search" class="sbox" id="pend-search" placeholder="🔍 Search pending GRs…" oninput="onPendSearch()">
+      <div class="pi" id="pend-info">– records</div>
+    </div>
+    <div class="tscroll" style="max-height:540px">
+      <table class="dt">
+        <thead><tr>
+          <th>#</th>
+          <th>GR Reg. Sl No.</th>
+          <th>VIMS DAK ID</th>
+          <th>PO No</th>
+          <th>Vendor</th>
+          <th>Invoice No</th>
+          <th>Invoice Date</th>
+          <th>Amount (L)</th>
+          <th>Matl Recd Date</th>
+          <th>Insp. Date</th>
+          <th>Pending Stage</th>
+          <th>Department</th>
+          <th>Indenter</th>
+          <th>Remark</th>
+        </tr></thead>
+        <tbody id="pend-tbody"></tbody>
+      </table>
+    </div>
+    <div class="pgn">
+      <div class="pg-cnt" id="pend-pg-cnt"></div>
+      <div id="pend-pg-btns" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── TAB 5: DATA EXPLORER ── -->
+<div class="tab-pane" id="pane-explorer">
+  <div class="tw">
+    <div class="ttbar">
+      <input type="search" class="sbox" id="search-input" placeholder="🔍 Search by VIMS ID, vendor, PO, invoice, dept…" oninput="onSearchInput()">
+      <div class="export-row">
+        <button class="exp-btn exp-csv" onclick="exportCSV()">⬇ CSV</button>
+        <button class="exp-btn exp-xl" onclick="exportExcel()">⬇ Excel</button>
+      </div>
+      <div class="pi" id="explorer-info">– records</div>
+    </div>
+    <div class="tscroll">
+      <table class="dt" id="explorer-table">
+        <thead id="explorer-thead"></thead>
+        <tbody id="explorer-tbody"></tbody>
+      </table>
+    </div>
+    <div class="pgn">
+      <div class="pg-cnt" id="pg-count"></div>
+      <div id="pg-btns" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+    </div>
+  </div>
+</div>
+
+</main>
+<script>
+/* ═══════════ CONFIG ═══════════ */
+const SHEET_ID = '120zgTVumNMofQ9cHDoMoPtV2JQPEMPQY39AEknEQRXM';
+const STRATEGIES = [
+  `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=PO+GR+Entry&range=A2:AY&headers=1`,
+  `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=1857546924&range=A2:AY&headers=1`,
+  `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=PO+GR+Entry&headers=1`,
+];
+const PALETTE = ['#2563eb','#0d9488','#d97706','#dc2626','#7c3aed','#0891b2','#16a34a','#db2777','#ea580c','#4f46e5','#065f46','#92400e','#1e40af','#166534','#7f1d1d'];
+const MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+let CHARTS={}, RAW=[], FILTERED=[], HEADERS=[], COL={};
+let EX_PAGE=1, EX_PER=35, EX_SORTED=[], EX_SORT_COL='', EX_SORT_DIR='asc', EX_SEARCH='';
+let PEND_PAGE=1, PEND_PER=40, PEND_SEARCH='';
+let REFRESH_T;
+Chart.register(ChartDataLabels);
+
+/* ═══════════ LOADER ═══════════ */
+function lmsg(msg,pct){
+  const e=document.getElementById('ltxt'), b=document.getElementById('lbar');
+  if(e) e.textContent=msg; if(b) b.style.width=pct+'%';
+}
+function hideLoader(){
+  const lo=document.getElementById('loader');
+  if(!lo) return;
+  lo.classList.add('fade');
+  setTimeout(()=>lo.style.display='none',600);
+}
+
+/* ═══════════ GVIZ FETCHER ═══════════ */
+function fetchStrategy(idx=0){
+  if(idx>=STRATEGIES.length){showErr('All fetch strategies failed. Check sheet permissions.');return;}
+  const url=STRATEGIES[idx]+'&_t='+Date.now();
+  const cb='__gv_'+Date.now()+'_'+idx;
+  const sc=document.createElement('script');
+  const TO=setTimeout(()=>{cleanup();fetchStrategy(idx+1);},12000);
+  window[cb]=function(resp){
+    cleanup();
+    try{parseGviz(resp);}
+    catch(e){console.warn('Strategy',idx,'failed:',e.message);fetchStrategy(idx+1);}
+  };
+  function cleanup(){clearTimeout(TO);delete window[cb];if(sc.parentNode)sc.parentNode.removeChild(sc);}
+  sc.src=url.replace('tqx=out:json',`tqx=out:json;responseHandler:${cb}`);
+  sc.onerror=()=>{cleanup();fetchStrategy(idx+1);};
+  document.head.appendChild(sc);
+}
+
+/* ═══════════ GVIZ PARSER ═══════════ */
+function parseGviz(resp){
+  lmsg('Parsing data…',60);
+  if(!resp||resp.status==='error') throw new Error('GViz error');
+  const tbl=resp.table;
+  let labels=tbl.cols.map(c=>(c.label||c.id||'').trim());
+  let rows=(tbl.rows||[]).map(row=>(row.c||[]).map((cell,ci)=>{
+    if(!cell||cell.v===null||cell.v===undefined) return '';
+    if(typeof cell.v==='string'&&cell.v.startsWith('Date(')){
+      const p=cell.v.slice(5,-1).split(',').map(Number);
+      return `${String(p[2]).padStart(2,'0')}.${String(p[1]+1).padStart(2,'0')}.${p[0]}`;
+    }
+    if(typeof cell.v==='number') return String(cell.v);
+    return(cell.f!==null&&cell.f!==undefined)?String(cell.f):String(cell.v);
+  }));
+  // Detect real header row in data
+  const SIG=['indenting deptt','matls recd','report status','payment status','amount','po no'];
+  let hi=-1;
+  for(let i=0;i<Math.min(6,rows.length);i++){
+    const t=rows[i].join('|').toLowerCase();
+    if(SIG.filter(s=>t.includes(s)).length>=3){hi=i;break;}
+  }
+  if(hi>=0){labels=rows[hi].map(s=>s.trim());rows=rows.slice(hi+1);}
+  rows=rows.filter(r=>r.filter(v=>v.trim()!=='').length>r.length*.15&&r.filter(v=>v.trim()!=='').length>2);
+  if(!rows.length) throw new Error('No data rows');
+  HEADERS=labels.filter(Boolean);
+  RAW=rows.map(r=>{const o={};labels.forEach((c,i)=>{if(c)o[c]=r[i]!==undefined?r[i]:'';});return o;})
+         .filter(r=>Object.values(r).some(v=>String(v).trim()!==''));
+  COL=resolveCols(HEADERS);
+  console.log('Loaded',RAW.length,'rows. COL:',COL);
+  console.log('Amount sample:',RAW.slice(0,5).map(r=>r[COL.amount]));
+  lmsg('Rendering…',85);
+  onReady();
+}
+
+/* ═══════════ COLUMN RESOLVER ═══════════ */
+function resolveCols(h){
+  function find(...hints){
+    for(const hint of hints){
+      const hl=hint.toLowerCase();
+      const r=h.find(c=>c.toLowerCase()===hl)
+             ||h.find(c=>c.toLowerCase().includes(hl));
+      if(r) return r;
+    }
+    return '';
+  }
+  // Log all headers so we can see exact names in console
+  console.log('📋 All headers:', h);
+  return {
+    sno:           find('s.no','s no','sr no','sl no'),
+    grRegSl:       find('gr reg','reg. sl','gr reg. sl','reg sl'),
+    grNoDate:      find('gr no/date','gr no','grno'),
+    vimsId:        find('vims dak','vims id','dak id','vims'),
+    po:            find('po no','po number'),
+    gemOrder:      find('gem order','gem'),
+    vendor:        find("vendor code","supplier's name",'vendor'),
+    itemDesc:      find('items description','item desc','description'),
+    qty:           find('recd. qty','qty','quantity'),
+    invNo:         find('inv. no','invoice no','inv no'),
+    invDate:       find('invoice date','inv date'),
+    amount:        find('amount'),
+    unloadLoc:     find('unloading location','unloading'),
+    srvNo:         find('srv 105/101 no','srv no','srn no'),
+    srvDate:       find('srv 105/101 date','srv date','srn date'),
+    recvd:         find('matls recd','material recd','recd date'),
+    inbDate:       find('inb date','inbound date','inb. date'),
+    c103Date:      find('103 date','103date'),
+    inspDate:      find('inspection date','insp date'),
+    shiftReturn:   find('file return from shifting','return from shift','shift return','file return'),
+    indenter:      find('indenter'),
+    dept:          find('indenting deptt','indenting dept','dept'),
+    shiftSt:       find('shifting status','shift status'),
+    parkNo:        find('parking no','park no'),
+    finDate:       find('sent to fin','finance date'),
+    pay:           find('payment status','payment'),
+    remark:        find('remark'),
+    rpt:           find('report status','report'),
+    ldPct:         find('delayed ld','ld %','delay ld'),
+    finalLd:       find('final ld','final ld applicable'),
+  };
+}
+
+/* ═══════════ DATE UTILITIES ═══════════ */
+function pad2(n){return String(n).padStart(2,'0');}
+function parseD(v){
+  if(!v) return null;
+  const s=String(v).trim();
+  if(!s||s==='-'||s==='NA'||s==='N/A') return null;
+  let m;
+  m=s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/);
+  if(m){let y=+m[3];if(y<100)y+=(y<50?2000:1900);return new Date(y,+m[2]-1,+m[1]);}
+  m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(m)return new Date(+m[1],+m[2]-1,+m[3]);
+  m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if(m){let y=+m[3];if(y<100)y+=(y<50?2000:1900);return new Date(y,+m[2]-1,+m[1]);}
+  if(/^\d{4,5}$/.test(s)){const n=+s;if(n>40000&&n<55000)return new Date(Math.round((n-25569)*86400e3));}
+  const d=new Date(s);return isNaN(d)?null:d;
+}
+function fmt(v){
+  const d=parseD(v);
+  if(!d)return v?String(v).trim():'';
+  const y=d.getFullYear();
+  if(y<1990||y>2100)return String(v).trim();
+  return `${pad2(d.getDate())}.${pad2(d.getMonth()+1)}.${y}`;
+}
+function mkey(v){
+  const d=parseD(v);if(!d)return null;
+  const y=d.getFullYear(),m=d.getMonth();
+  if(y<2000||y>2100)return null;
+  return{key:`${y}-${pad2(m+1)}`,y,m,label:`${MN[m]} ${y}`};
+}
+function sameDay(a,b){return a.getDate()===b.getDate()&&a.getMonth()===b.getMonth()&&a.getFullYear()===b.getFullYear();}
+function sameMonth(a,b){return a.getMonth()===b.getMonth()&&a.getFullYear()===b.getFullYear();}
+function sameYear(a,b){return a.getFullYear()===b.getFullYear();}
+
+/* ═══════════ AMOUNT UTILITIES ═══════════ */
+function parseAmt(v){if(!v&&v!==0)return 0;const n=parseFloat(String(v).replace(/[₹$€£,\s]/g,'').trim());return isNaN(n)?0:n;}
+function toL(r){return r/100000;}
+function fmtL(r,d=2){const l=toL(r);return Math.abs(l)>=100?l.toFixed(1)+' L':l.toFixed(d)+' L';}
+function fmtLS(r){const l=toL(r);if(Math.abs(l)>=1000)return(l/100).toFixed(1)+' Cr';if(Math.abs(l)>=100)return l.toFixed(0)+' L';return l.toFixed(1)+' L';}
+
+/* ═══════════ FILTERS ═══════════ */
+function populateFilters(){
+  const dist=k=>[...new Set(RAW.map(r=>String(r[k]||'').trim()).filter(Boolean))].sort();
+  const mkOpts=(el,vals,ph)=>{el.innerHTML=`<option value="">${ph}</option>`+vals.map(v=>`<option>${v}</option>`).join('');};
+  mkOpts(document.getElementById('f-dept'),dist(COL.dept),'All Departments');
+  mkOpts(document.getElementById('f-status'),dist(COL.rpt),'All Report Status');
+  // Payment: only meaningful statuses
+  const pays=dist(COL.pay).filter(v=>{const vl=v.toLowerCase();return !(!vl||vl==='na'||vl==='n/a'||vl==='unknown'||vl==='-');});
+  mkOpts(document.getElementById('f-pay'),pays,'All Payment Status');
+  const months={},years=new Set();
+  RAW.forEach(r=>{const mk=mkey(r[COL.recvd]);if(mk){months[mk.key]=mk.label;years.add(String(mk.y));}});
+  const sm=Object.keys(months).sort();
+  document.getElementById('f-month').innerHTML='<option value="">All Months</option>'+sm.map(k=>`<option value="${k}">${months[k]}</option>`).join('');
+  document.getElementById('f-year').innerHTML='<option value="">All Years</option>'+''+[...years].sort().map(y=>`<option>${y}</option>`).join('');
+}
+function applyFilters(){
+  const dept=document.getElementById('f-dept').value;
+  const stat=document.getElementById('f-status').value;
+  const pay=document.getElementById('f-pay').value;
+  const month=document.getElementById('f-month').value;
+  const year=document.getElementById('f-year').value;
+  FILTERED=RAW.filter(r=>{
+    if(dept&&String(r[COL.dept]||'').trim()!==dept)return false;
+    if(stat&&String(r[COL.rpt]||'').trim()!==stat)return false;
+    if(pay&&String(r[COL.pay]||'').trim()!==pay)return false;
+    if(month||year){const mk=mkey(r[COL.recvd]);if(!mk)return false;if(month&&mk.key!==month)return false;if(year&&String(mk.y)!==year)return false;}
+    return true;
+  });
+  document.getElementById('f-count').textContent=FILTERED.length.toLocaleString('en-IN')+' records';
+  renderAll();
+}
+function clearFilters(){['f-dept','f-status','f-pay','f-month','f-year'].forEach(id=>document.getElementById(id).value='');applyFilters();}
+
+/* ═══════════ TAB SWITCH ═══════════ */
+function switchTab(name,el){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('pane-'+name).classList.add('active');
+  if(name==='monthly')renderMonthly();
+  if(name==='tracker')renderTracker();
+  if(name==='pending')renderPending();
+  if(name==='explorer')renderExplorer();
+}
+
+/* ═══════════ CHART HELPERS ═══════════ */
+const GC='#e8ecf5',TC='#4b5563';
+function mkChart(id,cfg){
+  if(CHARTS[id]){CHARTS[id].destroy();delete CHARTS[id];}
+  const el=document.getElementById(id);if(!el)return;
+  CHARTS[id]=new Chart(el.getContext('2d'),cfg);
+}
+function mkLeg(id,labels,colors){
+  const el=document.getElementById(id);if(!el)return;
+  el.innerHTML=labels.map((l,i)=>`<div class="cli"><div class="cld" style="background:${colors[i%colors.length]}"></div>${l}</div>`).join('');
+}
+const TOOLTIP={backgroundColor:'rgba(15,23,40,.92)',titleColor:'#e2e8f0',bodyColor:'#cbd5e1',padding:10,cornerRadius:8,titleFont:{family:"'Outfit',sans-serif",weight:'700',size:13}};
+const BASE_SC={x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{ticks:{color:TC,font:{size:11}},grid:{color:GC}}};
+
+// Data label presets
+const DL_OFF={display:false};
+const DL_BAR={display:true,anchor:'end',align:'end',offset:3,color:'#374151',font:{weight:'700',size:10,family:"'DM Sans',sans-serif"},formatter:v=>v>0?v:''};
+const DL_BAR_L={display:true,anchor:'end',align:'end',offset:3,color:'#374151',font:{weight:'700',size:10,family:"'DM Sans',sans-serif"},formatter:v=>v>0?v.toFixed(1)+'L':''};
+const DL_PIE={display:true,color:'#fff',font:{weight:'700',size:11,family:"'Outfit',sans-serif"},formatter:(v,ctx)=>{const t=ctx.dataset.data.reduce((a,b)=>a+b,0);const p=Math.round(v/t*100);return p>=5?`${p}%\n(${v})`:''}};
+const DL_LINE={display:true,align:'top',anchor:'end',offset:5,color:'#2563eb',font:{weight:'700',size:10},formatter:v=>v>0?v:''};
+const DL_MOM={display:true,anchor:'end',align:ctx=>ctx.dataset.data[ctx.dataIndex]>=0?'end':'start',offset:3,color:ctx=>ctx.dataset.data[ctx.dataIndex]>=0?'#15803d':'#b91c1c',font:{weight:'700',size:10},formatter:v=>v===0?'':(v>0?'+'+v:v)};
+
+function barOpts(dlPreset,yCallback,extraScales){
+  return{
+    responsive:true,maintainAspectRatio:false,animation:{duration:500},
+    plugins:{legend:{display:false},datalabels:dlPreset,tooltip:TOOLTIP},
+    scales:{
+      x:{...BASE_SC.x,ticks:{...BASE_SC.x.ticks,maxRotation:30,autoSkip:false}},
+      y:{...BASE_SC.y,ticks:{...BASE_SC.y.ticks,callback:yCallback||undefined},
+         afterDataLimits:ax=>{ax.max=ax.max*1.2;},
+         ...extraScales}
+    }
+  };
+}
+
+/* ═══════════ RENDER ALL ═══════════ */
+function renderAll(){
+  renderKPIs();renderOverview();renderPendingTable();
+  // Active tab
+  const activeTab=document.querySelector('.tab-btn.active')?.getAttribute('onclick')?.match(/switchTab\('(\w+)'/)?.[1];
+  if(activeTab==='monthly')renderMonthly();
+  if(activeTab==='tracker')renderTracker();
+  if(activeTab==='pending')renderPending();
+  if(activeTab==='explorer')renderExplorer();
+}
+
+/* ═══════════ KPIs ═══════════ */
+function renderKPIs(){
+  const F=FILTERED;
+  const tot=F.length;
+  const totAmt=F.reduce((s,r)=>s+parseAmt(r[COL.amount]),0);
+  const pend=F.filter(r=>String(r[COL.pay]||'').toLowerCase().includes('pend')).length;
+  const paid=F.filter(r=>String(r[COL.pay]||'').toLowerCase().includes('paid')).length;
+  const insp=F.filter(r=>String(r[COL.rpt]||'').toLowerCase().includes('inspect')).length;
+  const pendAmt=F.filter(r=>String(r[COL.pay]||'').toLowerCase().includes('pend')).reduce((s,r)=>s+parseAmt(r[COL.amount]),0);
+  const kpis=[
+    {l:'Total GR Entries',v:tot.toLocaleString('en-IN'),s:'Active records',c:'var(--blue)',i:'📋'},
+    {l:'Total Invoice Value',v:fmtLS(totAmt),s:'From Column S (Amount)',c:'var(--amber)',i:'💰'},
+    {l:'Payment Pending',v:pend.toLocaleString('en-IN'),s:`${tot?Math.round(pend/tot*100):0}% of total`,c:'var(--red)',i:'⏳'},
+    {l:'Settled (Paid)',v:paid.toLocaleString('en-IN'),s:'Cleared invoices',c:'var(--green)',i:'✅'},
+    {l:'Inspection Pending',v:insp.toLocaleString('en-IN'),s:'Awaiting quality check',c:'var(--orange)',i:'🔍'},
+    {l:'Pending Exposure',v:fmtLS(pendAmt),s:'Uncleared invoice value',c:'var(--purple)',i:'⚠️'},
+  ];
+  document.getElementById('kpi-grid').innerHTML=kpis.map(k=>`<div class="kcard" style="--kc:${k.c}"><div class="ki">${k.i}</div><div class="kl">${k.l}</div><div class="kv">${k.v}</div><div class="ks">${k.s}</div></div>`).join('');
+}
+
+/* ═══════════ OVERVIEW CHARTS ═══════════ */
+function groupCnt(data,key){const m={};data.forEach(r=>{const v=String(r[key]||'Unknown').trim()||'Unknown';m[v]=(m[v]||0)+1;});return m;}
+function groupSum(data,kg,kv){const m={};data.forEach(r=>{const k=String(r[kg]||'Unknown').trim()||'Unknown';m[k]=(m[k]||0)+parseAmt(r[kv]);});return m;}
+function sdesc(obj){return Object.entries(obj).sort((a,b)=>b[1]-a[1]);}
+
+function renderOverview(){
+  const F=FILTERED;
+  /* 1 — Dept bar */
+  const dc=sdesc(groupCnt(F,COL.dept)).slice(0,12);
+  mkChart('ch-dept-bar',{type:'bar',data:{labels:dc.map(([k])=>k),datasets:[{data:dc.map(([,v])=>v),backgroundColor:PALETTE,borderRadius:6,borderSkipped:false}]},options:barOpts(DL_BAR)});
+  /* 2 — Status pie */
+  const sc=sdesc(groupCnt(F,COL.rpt));
+  mkChart('ch-status-pie',{type:'pie',data:{labels:sc.map(([k])=>k),datasets:[{data:sc.map(([,v])=>v),backgroundColor:PALETTE,borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:500},plugins:{legend:{display:false},datalabels:DL_PIE,tooltip:TOOLTIP}}});
+  mkLeg('leg-status',sc.map(([k,v])=>`${k} (${v})`),PALETTE);
+  /* 3 — Monthly trend line */
+  const magg=buildMAgg(F);const mkeys=Object.keys(magg).sort();
+  mkChart('ch-trend',{type:'line',data:{labels:mkeys.map(k=>magg[k].label),datasets:[{data:mkeys.map(k=>magg[k].cnt),borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.08)',fill:true,tension:.35,pointRadius:4,pointBackgroundColor:'#2563eb',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:500},
+      plugins:{legend:{display:false},datalabels:DL_LINE,tooltip:TOOLTIP},
+      scales:{x:{...BASE_SC.x,ticks:{...BASE_SC.x.ticks,maxRotation:45,autoSkip:false}},y:{...BASE_SC.y,afterDataLimits:ax=>{ax.max=ax.max*1.2;}}}}});
+  /* 4 — Payment donut — only meaningful statuses */
+  const payData=Object.entries(groupCnt(F,COL.pay)).filter(([k])=>{const kl=k.toLowerCase();return kl&&kl!=='na'&&kl!=='n/a'&&kl!=='unknown'&&kl!=='-'&&k.trim()!=='';}).sort((a,b)=>b[1]-a[1]);
+  const pCols=['#dc2626','#16a34a','#d97706','#7c3aed','#0891b2','#2563eb'];
+  mkChart('ch-pay-donut',{type:'doughnut',data:{labels:payData.map(([k])=>k),datasets:[{data:payData.map(([,v])=>v),backgroundColor:pCols,borderWidth:0,hoverOffset:5}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',animation:{duration:500},plugins:{legend:{display:false},datalabels:DL_PIE,tooltip:TOOLTIP}}});
+  mkLeg('leg-pay',payData.map(([k,v])=>`${k} (${v})`),pCols);
+  /* 5 — Dept amount bar */
+  const da=sdesc(groupSum(F,COL.dept,COL.amount)).slice(0,12);
+  mkChart('ch-dept-amt',{type:'bar',data:{labels:da.map(([k])=>k),datasets:[{data:da.map(([,v])=>toL(v)),backgroundColor:PALETTE.slice(2),borderRadius:6,borderSkipped:false}]},
+    options:barOpts(DL_BAR_L,v=>v.toFixed(1)+' L')});
+  /* 6 — Pending exposure bar */
+  const pend=F.filter(r=>String(r[COL.pay]||'').toLowerCase().includes('pend'));
+  const pa=sdesc(groupSum(pend,COL.dept,COL.amount)).slice(0,12);
+  mkChart('ch-pend-amt',{type:'bar',data:{labels:pa.map(([k])=>k),datasets:[{data:pa.map(([,v])=>toL(v)),backgroundColor:'#dc2626',borderRadius:6,borderSkipped:false}]},
+    options:barOpts(DL_BAR_L,v=>v.toFixed(1)+' L')});
+}
+
+/* ═══════════ TOP 50 PENDING TABLE ═══════════ */
+function renderPendingTable(){
+  const F=FILTERED;
+  const rows=F.filter(r=>String(r[COL.pay]||'').toLowerCase().includes('pend'))
+    .slice().sort((a,b)=>parseAmt(b[COL.amount])-parseAmt(a[COL.amount])).slice(0,50);
+  const sc=s=>{const sl=(s||'').toLowerCase();if(sl.includes('inspect'))return'ba';if(sl.includes('shift'))return'bt';if(sl.includes('103'))return'bp';if(sl.includes('pass'))return'bg';return'bb';};
+  document.getElementById('top-pend-body').innerHTML=rows.length
+    ?rows.map((r,i)=>`<tr>
+      <td style="color:var(--txt3);font-weight:600">${i+1}</td>
+      <td style="font-weight:700;color:var(--teal)">${r[COL.grRegSl]||'–'}</td>
+      <td style="color:var(--blue);font-weight:700">${r[COL.vimsId]||'–'}</td>
+      <td>${r[COL.po]||'–'}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis" title="${r[COL.vendor]||''}">${(r[COL.vendor]||'–').slice(0,32)}</td>
+      <td>${r[COL.invNo]||'–'}</td>
+      <td>${fmt(r[COL.invDate])}</td>
+      <td class="amt-c">${fmtL(parseAmt(r[COL.amount]))}</td>
+      <td>${fmt(r[COL.recvd])}</td>
+      <td>${fmt(r[COL.inspDate])}</td>
+      <td><span class="badge ${sc(r[COL.rpt])}">${r[COL.rpt]||'–'}</span></td>
+      <td><span class="badge bb">${r[COL.dept]||'–'}</span></td>
+      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;color:var(--txt3)" title="${r[COL.remark]||''}">${(r[COL.remark]||'–').slice(0,30)}</td>
+    </tr>`).join('')
+    :`<tr><td colspan="13" style="text-align:center;padding:32px;color:var(--txt3)">No pending GRs in current filter</td></tr>`;
+}
+
+/* ═══════════ MONTHLY AGGREGATOR ═══════════ */
+function buildMAgg(data){
+  const agg={};
+  data.forEach(r=>{
+    const mk=mkey(r[COL.recvd]);if(!mk)return;
+    if(!agg[mk.key])agg[mk.key]={cnt:0,amt:0,label:mk.label,depts:{},pending:0,insp:0};
+    const e=agg[mk.key];e.cnt++;e.amt+=parseAmt(r[COL.amount]);
+    const d=String(r[COL.dept]||'Unknown').trim();e.depts[d]=(e.depts[d]||0)+1;
+    if(String(r[COL.pay]||'').toLowerCase().includes('pend'))e.pending++;
+    if(String(r[COL.rpt]||'').toLowerCase().includes('inspect'))e.insp++;
+  });
+  return agg;
+}
+
+/* ═══════════ MONTHLY TAB ═══════════ */
+function renderMonthly(){
+  const magg=buildMAgg(FILTERED);const mkeys=Object.keys(magg).sort();
+  mkChart('ch-m-val',{type:'bar',data:{labels:mkeys.map(k=>magg[k].label),datasets:[{data:mkeys.map(k=>toL(magg[k].amt)),backgroundColor:mkeys.map((_,i)=>PALETTE[i%PALETTE.length]),borderRadius:6,borderSkipped:false}]},
+    options:{...barOpts(DL_BAR_L,v=>v.toFixed(0)+' L'),plugins:{legend:{display:false},datalabels:DL_BAR_L,tooltip:{...TOOLTIP,callbacks:{label:ctx=>` ₹ ${ctx.raw.toFixed(2)} L`}}}
+  }});
+  const cnts=mkeys.map(k=>magg[k].cnt);const deltas=cnts.map((v,i)=>i===0?0:v-cnts[i-1]);
+  mkChart('ch-mom',{type:'bar',data:{labels:mkeys.map(k=>magg[k].label),datasets:[{data:deltas,backgroundColor:deltas.map(v=>v>=0?'rgba(22,163,74,.75)':'rgba(220,38,38,.75)'),borderRadius:4,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:500},plugins:{legend:{display:false},datalabels:DL_MOM,tooltip:TOOLTIP},scales:{x:{...BASE_SC.x,ticks:{...BASE_SC.x.ticks,maxRotation:45,autoSkip:false}},y:{...BASE_SC.y,afterDataLimits:ax=>{ax.max=(ax.max||0)*1.25;ax.min=(ax.min||0)*1.25;}}}
+  }});
+  const mcc=['#2563eb','#0d9488','#d97706','#7c3aed','#0891b2','#16a34a','#db2777'];
+  document.getElementById('month-grid').innerHTML=mkeys.slice().reverse().map((k,ci)=>{
+    const d=magg[k];const c=mcc[ci%mcc.length];
+    const td=sdesc(d.depts).slice(0,4);const mx=td[0]?.[1]||1;
+    return`<div class="mc" style="--mcc:${c}"><div class="mch"><div><div class="mch-l">${d.label.split(' ')[0]}</div><div class="mch-s">${d.label.split(' ')[1]}</div></div><div class="mch-r"><div class="mc-bdg">${d.cnt} GRs</div><div style="font-size:11.5px;color:var(--txt3);margin-top:3px">₹ ${toL(d.amt).toFixed(2)} L</div></div></div>
+    <div class="msr"><span>Pending Payment</span><span class="msrv" style="color:var(--red)">${d.pending}</span></div>
+    <div class="msr"><span>Insp. Pending</span><span class="msrv" style="color:var(--amber)">${d.insp}</span></div>
+    <div class="msr"><span>Avg Ticket</span><span class="msrv">${d.cnt?fmtL(d.amt/d.cnt):'–'}</span></div>
+    <div class="dbl">${td.map(([dep,cnt])=>`<div class="dbi"><div style="min-width:75px;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${dep}">${dep}</div><div class="dbb"><div class="dbf" style="width:${Math.round(cnt/mx*100)}%;background:${c}"></div></div><div style="min-width:22px;text-align:right;font-weight:700;font-size:12px">${cnt}</div></div>`).join('')}</div>
+    </div>`;
+  }).join('')||'<div style="padding:32px;color:var(--txt3)">No data for selected filters</div>';
+}
+
+/* ═══════════ TRACKER TAB ═══════════ */
+function renderTracker(){
+  const now = new Date();
+  document.getElementById('tracker-today-lbl').textContent =
+    `${pad2(now.getDate())}.${pad2(now.getMonth()+1)}.${now.getFullYear()}`;
+  const ALL = FILTERED;
+
+  // Count rows where the specific date column has a VALID PARSEABLE DATE
+  // falling on today / this month / this year.
+  // Non-date text (e.g. "Done", reference numbers) is NOT counted.
+  function countCol(colKey){
+    const col = COL[colKey];
+    if(!col) return {t:0, m:0, y:0};
+    let t=0, mo=0, yr=0;
+    ALL.forEach(r=>{
+      const raw = String(r[col]||'').trim();
+      if(!raw || raw==='-' || raw.toLowerCase()==='na' || raw.toLowerCase()==='n/a') return;
+      const d = parseD(raw);
+      // ONLY count if we got a valid, plausible date (year between 2000–2100)
+      if(!d || isNaN(d) || d.getFullYear()<2000 || d.getFullYear()>2100) return;
+      if(sameDay(d,now))   t++;
+      if(sameMonth(d,now)) mo++;
+      if(sameYear(d,now))  yr++;
+    });
+    return {t, m:mo, y:yr};
+  }
+
+  const rowDefs = [
+    {head:'TOTAL MATERIAL RECEIVED',    hint:'Matls Recd date column',           col:'recvd'},
+    {head:'TOTAL INBOUND CREATED',      hint:'Inb date column',                  col:'inbDate'},
+    {head:'TOTAL 103 CREATED',          hint:'103 date column',                  col:'c103Date'},
+    {head:'TOTAL SRV 105/101 CREATED',  hint:'SRV 105/101 date column',          col:'srvDate'},
+    {head:'TOTAL MATERIAL INSPECTED',   hint:'Inspection Date column',           col:'inspDate'},
+    {head:'TOTAL SHIFTING DONE',        hint:'File Return From Shifting column',  col:'shiftReturn'},
+    {head:'TOTAL PARK & SENT TO FIN',   hint:'Sent to Fin Date column',          col:'finDate'},
+  ];
+
+  // Debug: log resolved column names
+  console.log('🔍 Tracker columns:', rowDefs.map(r=>r.col+' → '+COL[r.col]));
+
+  document.getElementById('tracker-body').innerHTML = rowDefs.map(row=>{
+    const c = countCol(row.col);
+    return `<tr>
+      <td class="head-cell">${row.head}
+        <div style="font-size:10px;color:var(--txt4);font-weight:400;margin-top:2px">
+          Source: ${COL[row.col] ? `"${COL[row.col]}"` : '<span style="color:#dc2626">column not found</span>'}
+        </div>
+      </td>
+      <td class="tnum today">${c.t}</td>
+      <td class="tnum month">${c.m}</td>
+      <td class="tnum year">${c.y}</td>
+    </tr>`;
+  }).join('');
+
+  /* Daily chart — last 30 days of Material Received */
+  const days=[], dlabels=[];
+  for(let i=29;i>=0;i--){
+    const d=new Date(now); d.setDate(now.getDate()-i);
+    days.push(d); dlabels.push(`${pad2(d.getDate())}/${pad2(d.getMonth()+1)}`);
+  }
+  function td2(a,b){return a&&b&&a.getDate()===b.getDate()&&a.getMonth()===b.getMonth()&&a.getFullYear()===b.getFullYear();}
+  const dcnts=days.map(d=>ALL.filter(r=>td2(parseD(r[COL.recvd]),d)).length);
+  mkChart('ch-daily',{type:'bar',
+    data:{labels:dlabels,datasets:[{data:dcnts,backgroundColor:'rgba(37,99,235,.7)',borderRadius:4,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:400},
+      plugins:{legend:{display:false},datalabels:{...DL_BAR,formatter:v=>v>0?v:''},tooltip:TOOLTIP},
+      scales:{x:{ticks:{color:TC,font:{size:9},maxRotation:45},grid:{color:GC}},
+              y:{ticks:{color:TC,font:{size:10}},grid:{color:GC},afterDataLimits:ax=>{ax.max=(ax.max||1)*1.25;}}}}});
+
+  /* Yearly bar */
+  const ygrp={};
+  ALL.forEach(r=>{const d=parseD(r[COL.recvd]);if(d&&!isNaN(d)&&d.getFullYear()>=2020)ygrp[d.getFullYear()]=(ygrp[d.getFullYear()]||0)+1;});
+  const ysorted=Object.entries(ygrp).sort(([a],[b])=>+a-+b);
+  mkChart('ch-yearly',{type:'bar',
+    data:{labels:ysorted.map(([k])=>k),datasets:[{data:ysorted.map(([,v])=>v),backgroundColor:PALETTE,borderRadius:6,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:400},
+      plugins:{legend:{display:false},datalabels:DL_BAR,tooltip:TOOLTIP},
+      scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},
+              y:{ticks:{color:TC,font:{size:11}},grid:{color:GC},afterDataLimits:ax=>{ax.max=(ax.max||1)*1.2;}}}}});
+}
+
+/* ═══════════ PENDING STAGE — REPORT STATUS IS THE ONLY SOURCE ═══════════
+   The REPORT STATUS column value directly determines the stage.
+   No inference from other columns. No fallbacks.
+   If REPORT STATUS doesn't match any known pending stage → excluded from chart.
+════════════════════════════════════════════════════════════════════════ */
+const STAGES = ['Inbound Pending','Parking Pending','Inspection Pending','Shifting Pending','103 Pending','105 Pending'];
+const PEND_STAGE_COLORS = {
+  'Inbound Pending':   '#dc2626',
+  'Parking Pending':   '#ea580c',
+  'Inspection Pending':'#d97706',
+  'Shifting Pending':  '#7c3aed',
+  '103 Pending':       '#0891b2',
+  '105 Pending':       '#16a34a'
+};
+function bo_style(s){return `background:${PEND_STAGE_COLORS[s]||'#6b7280'}1a;color:${PEND_STAGE_COLORS[s]||'#6b7280'};font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px`;}
+
+// Map the raw REPORT STATUS text → one of the 6 canonical stage names.
+// Returns null if the status doesn't indicate a pending stage.
+function classifyStage(rptRaw){
+  const r = String(rptRaw||'').trim().toLowerCase();
+  if(!r || r==='-' || r==='na' || r==='n/a') return null;
+
+  // Match each stage — check for the stage keyword anywhere in the text
+  if(r.includes('inbound pend') || r==='inbound') return 'Inbound Pending';
+  if(r.includes('parking pend') || r.includes('park pend')) return 'Parking Pending';
+  if(r.includes('inspection pend') || r.includes('insp pend')) return 'Inspection Pending';
+  if(r.includes('shifting pend') || r.includes('shift pend')) return 'Shifting Pending';
+  if(r.includes('103 pend') || r==='103') return '103 Pending';
+  if(r.includes('105 pend') || r.includes('101 pend') || r.includes('srv pend')) return '105 Pending';
+
+  // Single-word partial matches (e.g. "Parking", "103", "Shifting")
+  if(r==='parking' || r==='park') return 'Parking Pending';
+  if(r==='inspection' || r==='insp') return 'Inspection Pending';
+  if(r==='shifting' || r==='shift') return 'Shifting Pending';
+  if(r==='103 pending' || r==='103pending') return '103 Pending';
+  if(r==='105 pending' || r==='105pending') return '105 Pending';
+
+  return null; // Not a recognisable pending stage — exclude from pending view
+}
+
+let PEND_ALL=[];
+function renderPending(){
+  const F = FILTERED;
+
+  // Build PEND_ALL: only rows whose REPORT STATUS classifies to a known pending stage
+  PEND_ALL = [];
+  F.forEach(r=>{
+    const stage = classifyStage(r[COL.rpt]);
+    if(!stage) return;  // skip rows that are not a pending stage
+    PEND_ALL.push({...r, _stage: stage});
+  });
+
+  // Sort oldest first by Matl Recd Date
+  PEND_ALL.sort((a,b)=>{
+    const da=parseD(a[COL.recvd]), db=parseD(b[COL.recvd]);
+    if(!da&&!db) return 0; if(!da) return 1; if(!db) return -1;
+    return da-db;
+  });
+
+  // Stage counts come EXCLUSIVELY from REPORT STATUS classification above
+  const stageCnts = STAGES.map(s => PEND_ALL.filter(r=>r._stage===s).length);
+
+  mkChart('ch-pend-status',{type:'bar',
+    data:{
+      labels: STAGES,
+      datasets:[{
+        data: stageCnts,
+        backgroundColor: STAGES.map(s=>PEND_STAGE_COLORS[s]),
+        borderRadius:8, borderSkipped:false
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false, animation:{duration:500},
+      plugins:{
+        legend:{display:false},
+        datalabels:{
+          display: ctx => ctx.dataset.data[ctx.dataIndex] > 0,
+          color:'#fff', anchor:'center', align:'center',
+          font:{weight:'800', size:14, family:"'Outfit',sans-serif"},
+          formatter: v => v
+        },
+        tooltip: TOOLTIP
+      },
+      scales:{
+        x:{ticks:{color:TC,font:{size:11},maxRotation:15},grid:{color:GC}},
+        y:{ticks:{color:TC,font:{size:11}},grid:{color:GC},
+           afterDataLimits:ax=>{ax.max=(ax.max||1)*1.25;}}
+      }
+    }
+  });
+
+  // Pending by dept
+  const deptPend = sdesc(groupCntArr(PEND_ALL,COL.dept)).slice(0,12);
+  mkChart('ch-pend-dept',{type:'bar',
+    data:{labels:deptPend.map(([k])=>k),datasets:[{data:deptPend.map(([,v])=>v),backgroundColor:PALETTE,borderRadius:6,borderSkipped:false}]},
+    options:barOpts(DL_BAR)});
+
+  renderPendTable();
+}
+function groupCntArr(data,key){const m={};data.forEach(r=>{const v=String(r[key]||'Unknown').trim()||'Unknown';m[v]=(m[v]||0)+1;});return m;}
+function onPendSearch(){PEND_SEARCH=document.getElementById('pend-search').value.toLowerCase().trim();PEND_PAGE=1;renderPendTable();}
+function renderPendTable(){
+  let data=PEND_ALL;
+  if(PEND_SEARCH)data=data.filter(r=>Object.values(r).some(v=>String(v).toLowerCase().includes(PEND_SEARCH)));
+  const total=data.length;
+  document.getElementById('pend-info').textContent=total.toLocaleString('en-IN')+' pending records';
+  const pages=Math.max(1,Math.ceil(total/PEND_PER));
+  if(PEND_PAGE>pages)PEND_PAGE=pages;
+  const start=(PEND_PAGE-1)*PEND_PER;
+  const slice=data.slice(start,start+PEND_PER);
+  document.getElementById('pend-tbody').innerHTML=slice.length
+    ?slice.map((r,i)=>`<tr>
+      <td style="color:var(--txt3);font-weight:600">${start+i+1}</td>
+      <td style="font-weight:700;color:var(--teal)">${r[COL.grRegSl]||'–'}</td>
+      <td style="color:var(--blue);font-weight:700">${r[COL.vimsId]||'–'}</td>
+      <td>${r[COL.po]||'–'}</td>
+      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis" title="${r[COL.vendor]||''}">${(r[COL.vendor]||'–').slice(0,28)}</td>
+      <td>${r[COL.invNo]||'–'}</td>
+      <td>${fmt(r[COL.invDate])}</td>
+      <td class="amt-c">${fmtL(parseAmt(r[COL.amount]))}</td>
+      <td>${fmt(r[COL.recvd])}</td>
+      <td>${fmt(r[COL.inspDate])}</td>
+      <td><span style="${bo_style(r._stage)}">${r._stage}</span></td>
+      <td><span class="badge bb">${r[COL.dept]||'–'}</span></td>
+      <td style="color:var(--txt3)">${r[COL.indenter]||'–'}</td>
+      <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;color:var(--txt3)" title="${r[COL.remark]||''}">${(r[COL.remark]||'–').slice(0,28)}</td>
+    </tr>`).join('')
+    :`<tr><td colspan="14" style="text-align:center;padding:40px;color:var(--txt3)">No pending records match filter</td></tr>`;
+  document.getElementById('pend-pg-cnt').textContent=`Showing ${total?start+1:0}–${Math.min(start+PEND_PER,total)} of ${total.toLocaleString('en-IN')}`;
+  // Pagination
+  const btns=[];
+  const pb=(i,l)=>btns.push(`<button class="pgb${i===PEND_PAGE?' active':''}" onclick="goPagePend(${i})" ${i<1||i>pages?'disabled':''}>${l}</button>`);
+  pb(PEND_PAGE-1,'‹');
+  for(let i=1;i<=pages;i++){if(i===1||i===pages||Math.abs(i-PEND_PAGE)<=2)pb(i,i);else if(btns[btns.length-1]!=='<span>…</span>')btns.push('<span>…</span>');}
+  pb(PEND_PAGE+1,'›');
+  document.getElementById('pend-pg-btns').innerHTML=btns.join('');
+}
+function goPagePend(p){PEND_PAGE=p;renderPendTable();}
+
+/* ═══════════ DATA EXPLORER ═══════════ */
+// Fixed ordered columns as per requirements
+const EX_COLS=[
+  {label:'S.No',            key:'_sno',       auto:true},
+  {label:'GR Reg. Sl No.',  key:'grRegSl'},
+  {label:'Matls Recd Date', key:'recvd',      isDate:true},
+  {label:'GR No/Date',      key:'grNoDate'},
+  {label:'PO NO',           key:'po'},
+  {label:'GeM Order No',    key:'gemOrder'},
+  {label:"Vendor Code-Supplier's Name", key:'vendor'},
+  {label:'Items Description',key:'itemDesc'},
+  {label:'Recd. Qty.',      key:'qty'},
+  {label:'Inv. No',         key:'invNo'},
+  {label:'Invoice Date',    key:'invDate',    isDate:true},
+  {label:'Amount',          key:'amount',     isAmt:true},
+  {label:'Unloading Location',key:'unloadLoc'},
+  {label:'SRV 105/101 No.', key:'srvNo'},
+  {label:'SRV 105/101 date',key:'srvDate',   isDate:true},
+  {label:'Inspection Date', key:'inspDate',  isDate:true},
+  {label:'INDENTER',        key:'indenter'},
+  {label:'Indenting Deptt', key:'dept'},
+  {label:'SHIFTING Status', key:'shiftSt'},
+  {label:'Parking No.',     key:'parkNo'},
+  {label:'Sent to Fin Date',key:'finDate',   isDate:true},
+  {label:'Payment status',  key:'pay'},
+  {label:'Remark',          key:'remark'},
+  {label:'VIMS DAK ID',     key:'vimsId'},
+  {label:'REPORT STATUS',   key:'rpt'},
+  {label:'DELAYED LD %',    key:'ldPct'},
+  {label:'FINAL LD APPLICABLE',key:'finalLd'},
+];
+function buildExCols(){return EX_COLS.filter(c=>c.auto||COL[c.key]);}
+function onSearchInput(){EX_SEARCH=document.getElementById('search-input').value.toLowerCase().trim();EX_PAGE=1;renderExplorer();}
+function renderExplorer(){
+  const cols=buildExCols();
+  // Header
+  document.getElementById('explorer-thead').innerHTML='<tr>'+cols.map(c=>`<th class="${EX_SORT_COL===c.key?EX_SORT_DIR:''}" onclick="${c.auto?'':` sortEx('${c.key}')`}">${c.label}<span class="si"></span></th>`).join('')+'</tr>';
+  let data=FILTERED;
+  if(EX_SEARCH)data=data.filter(r=>cols.filter(c=>!c.auto).some(c=>String(r[COL[c.key]]||'').toLowerCase().includes(EX_SEARCH)));
+  if(EX_SORT_COL&&!EX_COLS.find(c=>c.key===EX_SORT_COL)?.auto){
+    const k=COL[EX_SORT_COL];const isA=EX_COLS.find(c=>c.key===EX_SORT_COL)?.isAmt;
+    data=[...data].sort((a,b)=>{const av=isA?parseAmt(a[k]):String(a[k]||'');const bv=isA?parseAmt(b[k]):String(b[k]||'');return EX_SORT_DIR==='asc'?(av<bv?-1:av>bv?1:0):(av>bv?-1:av<bv?1:0);});
+  }
+  EX_SORTED=data;
+  const total=data.length;const pages=Math.max(1,Math.ceil(total/EX_PER));
+  if(EX_PAGE>pages)EX_PAGE=pages;
+  const start=(EX_PAGE-1)*EX_PER;const slice=data.slice(start,start+EX_PER);
+  document.getElementById('explorer-info').textContent=total.toLocaleString('en-IN')+' records';
+  document.getElementById('pg-count').textContent=`Showing ${total?start+1:0}–${Math.min(start+EX_PER,total)} of ${total.toLocaleString('en-IN')}`;
+  const payB=s=>{const sl=(s||'').toLowerCase();if(sl.includes('paid'))return'bg';if(sl.includes('pend'))return'br';return'bk';};
+  const rptB=s=>{const sl=(s||'').toLowerCase();if(sl.includes('inspect'))return'ba';if(sl.includes('shift'))return'bt';if(sl.includes('pass'))return'bg';return'bp';};
+  document.getElementById('explorer-tbody').innerHTML=slice.length
+    ?slice.map((r,i)=>`<tr>${cols.map(c=>{
+      if(c.auto) return`<td style="color:var(--txt3);font-weight:600">${start+i+1}</td>`;
+      const raw=r[COL[c.key]]||'';
+      if(c.isAmt){const v=parseAmt(raw);return`<td class="amt-c">${v?fmtL(v):'–'}</td>`;}
+      if(c.isDate) return`<td>${fmt(raw)||'–'}</td>`;
+      if(c.key==='pay') return`<td><span class="badge ${payB(raw)}">${raw||'–'}</span></td>`;
+      if(c.key==='rpt') return`<td><span class="badge ${rptB(raw)}">${raw||'–'}</span></td>`;
+      return`<td>${raw||'–'}</td>`;
+    }).join('')}</tr>`).join('')
+    :`<tr><td colspan="${cols.length}" style="text-align:center;padding:48px;color:var(--txt3)">No records match</td></tr>`;
+  mkPgn(pages,'pg-btns',EX_PAGE,(p)=>{EX_PAGE=p;renderExplorer();});
+}
+function sortEx(k){if(EX_SORT_COL===k){EX_SORT_DIR=EX_SORT_DIR==='asc'?'desc':'asc';}else{EX_SORT_COL=k;EX_SORT_DIR='asc';}EX_PAGE=1;renderExplorer();}
+
+/* ═══════════ PAGINATION HELPER ═══════════ */
+function mkPgn(pages,containerId,current,onPage){
+  const btns=[];
+  const pb=(i,l)=>btns.push(`<button class="pgb${i===current?' active':''}" onclick="(${onPage})(${i})" ${i<1||i>pages?'disabled':''}>${l}</button>`);
+  pb(current-1,'‹');
+  for(let i=1;i<=pages;i++){if(i===1||i===pages||Math.abs(i-current)<=2)pb(i,i);else if(btns[btns.length-1]!=='<span>…</span>')btns.push('<span>…</span>');}
+  pb(current+1,'›');
+  document.getElementById(containerId).innerHTML=btns.join('');
+}
+
+/* ═══════════ EXPORT ═══════════ */
+function buildExportData(){
+  const cols=buildExCols().filter(c=>!c.auto);
+  const header=cols.map(c=>c.label);
+  const rows=EX_SORTED.length?EX_SORTED:FILTERED;
+  const body=rows.map(r=>cols.map(c=>{
+    const raw=r[COL[c.key]]||'';
+    if(c.isDate)return fmt(raw)||raw;
+    if(c.isAmt){const v=parseAmt(raw);return v?toL(v).toFixed(2):'';}
+    return raw;
+  }));
+  return{header,body};
+}
+function exportCSV(){
+  const{header,body}=buildExportData();
+  const csv=[header,...body].map(row=>row.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`GR_Data_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+}
+function exportExcel(){
+  const{header,body}=buildExportData();
+  let xml=`<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Worksheet ss:Name="GR Data"><Table>`;
+  const row=cells=>`<Row>${cells.map(c=>`<Cell><Data ss:Type="String">${String(c).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</Data></Cell>`).join('')}</Row>`;
+  xml+=row(header);body.forEach(r=>{xml+=row(r);});
+  xml+=`</Table></Worksheet></Workbook>`;
+  const blob=new Blob([xml],{type:'application/vnd.ms-excel;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`GR_Data_${new Date().toISOString().slice(0,10)}.xls`;a.click();
+}
+
+/* ═══════════ ERROR UI ═══════════ */
+function showErr(msg){
+  const lo=document.getElementById('loader');if(!lo)return;
+  lo.innerHTML=`<div style="max-width:480px;background:#fff;border-radius:16px;padding:36px;text-align:left;box-shadow:0 25px 50px rgba(0,0,0,.3)">
+    <div style="font-size:30px;margin-bottom:10px">⚠️</div>
+    <div style="font-family:'Outfit',sans-serif;font-size:18px;font-weight:800;color:#0f1728;margin-bottom:8px">Cannot Load Sheet Data</div>
+    <div style="font-size:13px;color:#374151;line-height:1.7;margin-bottom:18px">${msg}</div>
+    <div style="font-size:12px;background:#f1f4fb;border-radius:10px;padding:14px;color:#374151;line-height:1.9;margin-bottom:18px"><strong>Ensure:</strong><br>1. Sheet shared: Anyone with link → Viewer<br>2. Tab named exactly <strong>PO GR Entry</strong><br>3. Headers on Row 2, data from Row 3</div>
+    <button onclick="reloadData(true)" style="background:#2563eb;border:none;color:#fff;font-weight:700;font-size:14px;padding:11px 22px;border-radius:10px;cursor:pointer;font-family:inherit">↻ Retry</button>
+  </div>`;
+}
+
+/* ═══════════ BOOT ═══════════ */
+function onReady(){
+  lmsg('Rendering dashboard…',95);
+  populateFilters();applyFilters();
+  document.getElementById('hdr-sub').textContent=`${RAW.length.toLocaleString('en-IN')} records · ${HEADERS.length} columns · PO GR Entry`;
+  document.getElementById('hdr-ts').textContent='Updated: '+new Date().toLocaleTimeString('en-IN');
+  setTimeout(hideLoader,400);
+}
+function reloadData(manual=false){
+  const lo=document.getElementById('loader');if(lo){lo.style.display='flex';lo.style.opacity='1';}
+  lmsg(manual?'Refreshing…':'Connecting to Google Sheets…',20);
+  clearTimeout(REFRESH_T);fetchStrategy(0);
+  REFRESH_T=setTimeout(()=>reloadData(false),600000);  // 10 minutes
+}
+window.addEventListener('load',()=>setTimeout(()=>reloadData(false),100));
+</script>
+</body>
+</html>
