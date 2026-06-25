@@ -1166,7 +1166,7 @@ function onReady(){
 }
 function reloadData(manual=false){
   const lo=document.getElementById('loader');if(lo){lo.style.display='flex';lo.style.opacity='1';}
-  lmsg(manual?'Refreshing…':'Connecting to Google Sheets…',20);
+  lmsg(manual?'Refreshing…':'Connecting to RK's Database…',20);
   clearTimeout(REFRESH_T);fetchStrategy(0);
   REFRESH_T=setTimeout(()=>reloadData(false),600000);  // 10 minutes
 }
